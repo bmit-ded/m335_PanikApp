@@ -3,7 +3,9 @@ package ch.zli.panikapp.ui.home;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -15,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,11 +51,12 @@ public class HomeFragment extends Fragment {
     String message;
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 0;
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_camera, container, false);
-        homeViewModel =
-                new ViewModelProvider(this).get(HomeViewModel.class);
+        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         button = (Button) view.findViewById(R.id.button);
+        EditText editText = (EditText) view.findViewById(R.id.editTextPhone);
+        TextView textView = (TextView) view.findViewById(R.id.textView);
 
         //initialisiere fusedlocationproviderclient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity().getApplicationContext());
@@ -60,6 +64,8 @@ public class HomeFragment extends Fragment {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                setContact(getActivity().getApplicationContext(),editText.getText().toString());
+                //TextView.setText(getContact(getActivity().getApplicationContext()) );
                 //erlaubnis überprüfen
                 if(ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     //wenn Erlaubnis erteilt
@@ -136,5 +142,19 @@ public class HomeFragment extends Fragment {
                     }
                     return;
                 }
+
+                public  void setContact(Context context, String phoneNo){
+                    SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString("PhoneNumber", phoneNo);
+                    editor.commit();
+                }
+
+                 public static String getContact(Context context) {
+                     SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
+                  return prefs.getString("PhoneNumber", "");
+
+                }
+
 
 }
