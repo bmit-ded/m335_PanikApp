@@ -2,6 +2,8 @@ package ch.zli.panikapp.ui.home;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -29,6 +31,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -53,24 +56,22 @@ public class HomeFragment extends Fragment {
 
         //initialisiere fusedlocationproviderclient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity().getApplicationContext());
-        while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            //falls nicht erteilt
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.SEND_SMS}, 44);
-        }
-        while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            //falls nicht erteilt
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
-
-        }
-
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //erlaubnis überprüfen
-                        //wenn Erlaubnis erteilt
-                        getLocation();
+                if(ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    //wenn Erlaubnis erteilt
+                    getLocation();
 
+                }else {
+                    while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        //falls nicht erteilt
+                        ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
+
+                    }
+                }
 
 
 
@@ -90,8 +91,15 @@ public class HomeFragment extends Fragment {
                     try {
                         Geocoder geocoder = new Geocoder(getActivity().getApplicationContext(), Locale.getDefault());
                         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-
-                                sendSMSMessage(addresses);
+                        if(ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+                            sendSMSMessage(addresses);
+                        }
+                        else {
+                            while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                                //falls nicht erteilt
+                                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.SEND_SMS}, 44);
+                            }
+                        }
 
 
                     } catch (IOException e) {
@@ -103,21 +111,29 @@ public class HomeFragment extends Fragment {
     }
 
     protected void sendSMSMessage(List<Address> addresses) {
-        phoneNo = "11";
-        message = "I pressed the panic button on my phone. Please send help to this location: ";
-        message += "Latitude" + addresses.get(0).getLatitude() + " Longitude :" + addresses.get(0).getLongitude() + " Country :" + addresses.get(0).getCountryName() + " Locality :" + addresses.get(0).getLocality() + " Address :"+ addresses.get(0).getAddressLine(0) ;
+        phoneNo = "0768054420";
+        message = "I pressed the panic button on my phone. Please send help to this location:\n";
+        message += "\nLatitude: " + addresses.get(0).getLatitude() + "\nLongitude : " + addresses.get(0).getLongitude() + "\nCountry : " + addresses.get(0).getCountryName() + "\nLocality : " + addresses.get(0).getLocality() + "\nAddress : "+ addresses.get(0).getAddressLine(0) ;
         sendSMS(phoneNo, message);
     }
 
 
     public void sendSMS(String phoneNo, String message) {
 
+                    try {
 
-                    SmsManager smsManager = SmsManager.getDefault();
-                    smsManager.sendTextMessage(phoneNo, null, message, null, null);
-                    Toast.makeText(getActivity().getApplicationContext(), "SMS sent.",
-                            Toast.LENGTH_LONG).show();
+                            SmsManager sms = SmsManager.getDefault();
+                            ArrayList<String> parts = sms.divideMessage(message);
 
+
+                            sms.sendMultipartTextMessage(phoneNo, null, parts, null, null);
+                            Toast.makeText(getActivity(), "SMS sent.", Toast.LENGTH_LONG).show();
+                        }
+
+                    catch (SecurityException e)
+                    {
+
+                    }
                     return;
                 }
 
