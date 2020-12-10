@@ -50,32 +50,30 @@ public class HomeFragment extends Fragment {
                 new ViewModelProvider(this).get(HomeViewModel.class);
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         button = (Button) view.findViewById(R.id.button);
-        textView1 = (TextView) view.findViewById(R.id.textView1);
-        textView2 = (TextView) view.findViewById(R.id.textView2);
-        textView3 = (TextView) view.findViewById(R.id.textView3);
-        textView4 = (TextView) view.findViewById(R.id.textView4);
-        textView5 = (TextView) view.findViewById(R.id.textView5);
 
-        //initualisiere fusedlocationproviderclient
+        //initialisiere fusedlocationproviderclient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity().getApplicationContext());
+        while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            //falls nicht erteilt
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.SEND_SMS}, 44);
+        }
+        while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            //falls nicht erteilt
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
+
+        }
+
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //erlaubnis überprüfen
-                if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    //wenn Erlaubnis erteilt
-                    getLocation();
-                } else {
-                    //falls nicht erteilt
-                    ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
-                }
-                if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
-                    sendSMSMessage();
-                } else {
-                    //falls nicht erteilt
-                    ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.SEND_SMS}, 44);
-                }
+                        //wenn Erlaubnis erteilt
+                        getLocation();
+
+
+
+
             }
         });
 
@@ -93,25 +91,9 @@ public class HomeFragment extends Fragment {
                         Geocoder geocoder = new Geocoder(getActivity().getApplicationContext(), Locale.getDefault());
                         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
 
-                        textView1.setText(Html.fromHtml(
-                                "<font color= '#6200EE'><b>Latitude :</b><br></font>" + addresses.get(0).getLatitude()
-                        ));
+                                sendSMSMessage(addresses);
 
-                        textView2.setText(Html.fromHtml(
-                                "<font color= '#6200EE'><b>Longitude :</b><br></font>" + addresses.get(0).getLongitude()
-                        ));
 
-                        textView3.setText(Html.fromHtml(
-                                "<font color= '#6200EE'><b>Country :</b><br></font>" + addresses.get(0).getCountryName()
-                        ));
-
-                        textView4.setText(Html.fromHtml(
-                                "<font color= '#6200EE'><b>Locality :</b><br></font>" + addresses.get(0).getLocality()
-                        ));
-
-                        textView5.setText(Html.fromHtml(
-                                "<font color= '#6200EE'><b>Address :</b><br></font>" + addresses.get(0).getAddressLine(0)
-                        ));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -120,30 +102,23 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    protected void sendSMSMessage() {
-        phoneNo = "117";
-        message = "ich brauche hilfe";
-        ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.SEND_SMS}, MY_PERMISSIONS_REQUEST_SEND_SMS);
+    protected void sendSMSMessage(List<Address> addresses) {
+        phoneNo = "11";
+        message = "I pressed the panic button on my phone. Please send help to this location: ";
+        message += "Latitude" + addresses.get(0).getLatitude() + " Longitude :" + addresses.get(0).getLongitude() + " Country :" + addresses.get(0).getCountryName() + " Locality :" + addresses.get(0).getLocality() + " Address :"+ addresses.get(0).getAddressLine(0) ;
+        sendSMS(phoneNo, message);
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[],
-                                           int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_SEND_SMS: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+    public void sendSMS(String phoneNo, String message) {
+
+
                     SmsManager smsManager = SmsManager.getDefault();
                     smsManager.sendTextMessage(phoneNo, null, message, null, null);
                     Toast.makeText(getActivity().getApplicationContext(), "SMS sent.",
                             Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(getActivity().getApplicationContext(),
-                            "SMS failed, please try again.", Toast.LENGTH_LONG).show();
+
                     return;
                 }
-            }
-        }
 
-    }
 }

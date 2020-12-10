@@ -47,6 +47,10 @@ public class CameraFragment extends Fragment {
         //setContentView(R.layout.activity_main);
         imageView = (ImageView) view.findViewById(R.id.imageView);
         button = (Button) view.findViewById(R.id.button);
+        while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            //falls nicht erteilt
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 44);
+        }
 
 
         button.setOnClickListener(new View.OnClickListener() {
@@ -65,16 +69,13 @@ public class CameraFragment extends Fragment {
             // Create the File where the photo should go
             File photoFile = null;
             try {
-                if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                    //wenn Erlaubnis erteilt
-                    Toast.makeText(getActivity().getApplicationContext(), "thank you", Toast.LENGTH_LONG).show();
+
+
+                   // Toast.makeText(getActivity().getApplicationContext(), "thank you", Toast.LENGTH_LONG).show();
 
                     photoFile = createImageFile();
 
-                } else {
-                    //falls nicht erteilt
-                    ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 44);
-                }
+
             } catch (IOException ex) {
                 // Error occurred while creating the File
                 ex.printStackTrace();
