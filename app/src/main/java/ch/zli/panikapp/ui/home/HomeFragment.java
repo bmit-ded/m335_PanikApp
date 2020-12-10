@@ -53,19 +53,27 @@ public class HomeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
-        View root = inflater.inflate(R.layout.fragment_home, container, false);
         button = (Button) view.findViewById(R.id.button);
+        Button button1 = (Button) view.findViewById(R.id.button1);
         EditText editText = (EditText) view.findViewById(R.id.editTextPhone);
         TextView textView = (TextView) view.findViewById(R.id.textView);
-
+        textView.setText(getContact(getActivity().getApplicationContext()) );
         //initialisiere fusedlocationproviderclient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity().getApplicationContext());
+
+        button1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setContact(getActivity().getApplicationContext(),editText.getText().toString());
+                textView.setText(getContact(getActivity().getApplicationContext()) );
+            }
+            });
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setContact(getActivity().getApplicationContext(),editText.getText().toString());
-                //TextView.setText(getContact(getActivity().getApplicationContext()) );
+
+
                 //erlaubnis überprüfen
                 if(ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     //wenn Erlaubnis erteilt
@@ -117,7 +125,7 @@ public class HomeFragment extends Fragment {
     }
 
     protected void sendSMSMessage(List<Address> addresses) {
-        phoneNo = "0768054420";
+        phoneNo = getContact(getActivity().getApplicationContext());
         message = "I pressed the panic button on my phone. Please send help to this location:\n";
         message += "\nLatitude: " + addresses.get(0).getLatitude() + "\nLongitude : " + addresses.get(0).getLongitude() + "\nCountry : " + addresses.get(0).getCountryName() + "\nLocality : " + addresses.get(0).getLocality() + "\nAddress : "+ addresses.get(0).getAddressLine(0) ;
         sendSMS(phoneNo, message);
@@ -143,15 +151,14 @@ public class HomeFragment extends Fragment {
                     return;
                 }
 
-                public  void setContact(Context context, String phoneNo){
+                public void setContact(Context context, String phoneNo){
                     SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
                     SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("PhoneNumber", phoneNo);
-                    editor.commit();
+                    editor.putString("PhoneNumber", phoneNo).commit();
                 }
 
                  public static String getContact(Context context) {
-                     SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
+                  SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
                   return prefs.getString("PhoneNumber", "");
 
                 }
