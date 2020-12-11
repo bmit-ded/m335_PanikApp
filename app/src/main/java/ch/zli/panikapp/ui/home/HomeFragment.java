@@ -45,11 +45,11 @@ public class HomeFragment extends Fragment {
 
     private HomeViewModel homeViewModel;
     Button button;
-    TextView textView1, textView2, textView3, textView4, textView5;
     FusedLocationProviderClient fusedLocationProviderClient;
     String phoneNo;
     String message;
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 0;
+
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
@@ -57,37 +57,36 @@ public class HomeFragment extends Fragment {
         Button button1 = (Button) view.findViewById(R.id.button1);
         EditText editText = (EditText) view.findViewById(R.id.editTextPhone);
         TextView textView = (TextView) view.findViewById(R.id.textView);
-        textView.setText(getContact(getActivity().getApplicationContext()) );
+        textView.setText(getContact(getActivity().getApplicationContext()));
         //initialisiere fusedlocationproviderclient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity().getApplicationContext());
+
+        int PERMISSION_ALL = 1;
+
+        String[] PERMISSIONS = {
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.CAMERA,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.SEND_SMS
+        };
+
+        if (!hasPermissions(getActivity().getApplicationContext(), PERMISSIONS)) {
+            ActivityCompat.requestPermissions(getActivity(), PERMISSIONS, PERMISSION_ALL);
+        }
 
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setContact(getActivity().getApplicationContext(),editText.getText().toString());
-                textView.setText(getContact(getActivity().getApplicationContext()) );
+                setContact(getActivity().getApplicationContext(), editText.getText().toString());
+                textView.setText(getContact(getActivity().getApplicationContext()));
             }
-            });
+        });
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-
-                //erlaubnis überprüfen
-                if(ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    //wenn Erlaubnis erteilt
-                    getLocation();
-
-                }else {
-                    while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        //falls nicht erteilt
-                        ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
-
-                    }
-                }
-
-
+                getLocation();
 
             }
         });
@@ -95,6 +94,7 @@ public class HomeFragment extends Fragment {
 
         return view;
     }
+
     @SuppressLint("MissingPermission")
     private void getLocation() {
         fusedLocationProviderClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
@@ -105,15 +105,8 @@ public class HomeFragment extends Fragment {
                     try {
                         Geocoder geocoder = new Geocoder(getActivity().getApplicationContext(), Locale.getDefault());
                         List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                        if(ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
-                            sendSMSMessage(addresses);
-                        }
-                        else {
-                            while (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-                                //falls nicht erteilt
-                                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.SEND_SMS}, 44);
-                            }
-                        }
+
+                        sendSMSMessage(addresses);
 
 
                     } catch (IOException e) {
@@ -127,41 +120,49 @@ public class HomeFragment extends Fragment {
     protected void sendSMSMessage(List<Address> addresses) {
         phoneNo = getContact(getActivity().getApplicationContext());
         message = "I pressed the panic button on my phone. Please send help to this location:\n";
-        message += "\nLatitude: " + addresses.get(0).getLatitude() + "\nLongitude : " + addresses.get(0).getLongitude() + "\nCountry : " + addresses.get(0).getCountryName() + "\nLocality : " + addresses.get(0).getLocality() + "\nAddress : "+ addresses.get(0).getAddressLine(0) ;
+        message += "\nLatitude: " + addresses.get(0).getLatitude() + "\nLongitude : " + addresses.get(0).getLongitude() + "\nCountry : " + addresses.get(0).getCountryName() + "\nLocality : " + addresses.get(0).getLocality() + "\nAddress : " + addresses.get(0).getAddressLine(0);
         sendSMS(phoneNo, message);
     }
 
 
     public void sendSMS(String phoneNo, String message) {
 
-                    try {
+        try {
 
-                            SmsManager sms = SmsManager.getDefault();
-                            ArrayList<String> parts = sms.divideMessage(message);
+            SmsManager sms = SmsManager.getDefault();
+            ArrayList<String> parts = sms.divideMessage(message);
 
 
-                            sms.sendMultipartTextMessage(phoneNo, null, parts, null, null);
-                            Toast.makeText(getActivity(), "SMS sent.", Toast.LENGTH_LONG).show();
-                        }
+            sms.sendMultipartTextMessage(phoneNo, null, parts, null, null);
+            Toast.makeText(getActivity(), "SMS sent.", Toast.LENGTH_LONG).show();
+        } catch (SecurityException e) {
 
-                    catch (SecurityException e)
-                    {
+        }
+        return;
+    }
 
-                    }
-                    return;
+    public void setContact(Context context, String phoneNo) {
+        SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("PhoneNumber", phoneNo).commit();
+    }
+
+    public static String getContact(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
+        return prefs.getString("PhoneNumber", "");
+
+    }
+
+    public static boolean hasPermissions(Context context, String... permissions) {
+        if (context != null && permissions != null) {
+            for (String permission : permissions) {
+                if (ActivityCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+                    return false;
                 }
-
-                public void setContact(Context context, String phoneNo){
-                    SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("PhoneNumber", phoneNo).commit();
-                }
-
-                 public static String getContact(Context context) {
-                  SharedPreferences prefs = context.getSharedPreferences("myAppPackage", 0);
-                  return prefs.getString("PhoneNumber", "");
-
-                }
+            }
+        }
+        return true;
+    }
 
 
 }
